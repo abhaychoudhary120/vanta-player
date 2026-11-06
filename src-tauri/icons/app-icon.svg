@@ -1,0 +1,53 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="base" x1="140" y1="80" x2="884" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18152B"/>
+      <stop offset="0.5" stop-color="#0C0B14"/>
+      <stop offset="1" stop-color="#07070B"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="286" y1="260" x2="754" y2="786" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C0B7FF"/>
+      <stop offset="0.48" stop-color="#8B7CFF"/>
+      <stop offset="1" stop-color="#4DE3C1"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="96" y1="72" x2="928" y2="952" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="white" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.12"/>
+    </linearGradient>
+    <radialGradient id="violet-glow" cx="0" cy="0" r="1" gradientTransform="translate(420 300) rotate(58) scale(470 540)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B7CFF" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#8B7CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mint-glow" cx="0" cy="0" r="1" gradientTransform="translate(702 760) rotate(-138) scale(360 320)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4DE3C1" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#4DE3C1" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soften" x="140" y="140" width="744" height="760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="42"/>
+    </filter>
+    <filter id="mark-glow" x="180" y="160" width="664" height="704" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="clip">
+      <rect x="72" y="72" width="880" height="880" rx="244"/>
+    </clipPath>
+  </defs>
+
+  <rect x="72" y="72" width="880" height="880" rx="244" fill="url(#base)"/>
+  <g clip-path="url(#clip)">
+    <circle cx="428" cy="300" r="390" fill="url(#violet-glow)"/>
+    <circle cx="716" cy="768" r="330" fill="url(#mint-glow)"/>
+    <path d="M168 640C316 590 442 618 566 686C678 748 794 758 900 724V952H168V640Z" fill="white" fill-opacity="0.018"/>
+  </g>
+  <rect x="73" y="73" width="878" height="878" rx="243" stroke="url(#edge)" stroke-width="2"/>
+
+  <path d="M286 302L512 760L738 302" stroke="#8B7CFF" stroke-opacity="0.38" stroke-width="94" stroke-linecap="round" stroke-linejoin="round" filter="url(#soften)"/>
+  <path d="M286 302L512 760L738 302" stroke="url(#mark)" stroke-width="76" stroke-linecap="round" stroke-linejoin="round" filter="url(#mark-glow)"/>
+  <path d="M382 486H642" stroke="white" stroke-opacity="0.82" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="512" cy="486" r="17" fill="#4DE3C1"/>
+</svg>
