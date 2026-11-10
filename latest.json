@@ -1,11 +1,11 @@
 {
-  "version": "v1.0.0",
-  "notes": "Initial public release of VANTA Media Player",
-  "pub_date": "2026-11-06T09:50:31.641Z",
+  "version": "1.1.0",
+  "notes": "Windows installer and signed updater artifacts for VANTA v1.1.0.",
+  "pub_date": "2026-11-10T14:19:59.656Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRVRTUmhzcE9oOXhpaW80dlFIdTlnR2J6ejUwS3BBaHNkWVBIZUF5cmpManlSWG5kbXVSdm9UQkZCV0dwVjE4M2dIK3FuTWg5MU5sQWttU0w4aEdYSXRRRjRxWTBqdnd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTUyMDI4CWZpbGU6VkFOVEFfMS4wLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjEuMC4wCkFUbU0waG9SdlJlK3VDc0NzR2o0Z0pxU0RGVVJsYTl2RTNYczkyYlhwM0FTUnhBME1QeUw0a2lxQXpFQm1ZU2djNTIxNWM2MGVrc1Z2SER5czlQNkRBPT0K",
-      "url": "https://github.com/abhaychoudhary120/vanta-player/releases/download/v1.0.0/VANTA_1.0.0_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRVRTUmhzcE9oOTQzYUNTZzZUc1FweCtCVDVCeG1WZThwQ0R2TGlwOFdoVVFtTXR6ZzR1UDNDNnJkZnY0NmNVRlBrVEdwSjFEL2NZOEMwVEtleWlEV2lwWGJ2WGhrelFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzIwMzk0CWZpbGU6VkFOVEFfMS4xLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjEuMS4wCndwSSs1Q3g0MUpFMHROV2RRRDFzanlqWWlGNW1obFduQ0pib0pRUmRCcDVFeTVRMzI4RFFqR3BXbkpyRU5KMjBFUW9kSXV0N3JwVXI5YXN6MjgzL0FnPT0K",
+      "url": "https://github.com/abhaychoudhary120/vanta-player/releases/download/v1.1.0/VANTA_1.1.0_x64-setup.exe"
     }
   }
 }
