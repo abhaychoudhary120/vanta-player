@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { Maximize2, Minimize2, Settings2 } from "lucide-react";
 import { usePlayerControls } from "../contexts/PlayerControlsContext";
+import { usePlayerStore } from "../store/usePlayerStore";
 import { IconButton } from "./ui/IconButton";
 import { RateMenu } from "./RateMenu";
-import { SettingsModal } from "./SettingsModal";
 import { VolumeControl } from "./VolumeControl";
 
 export function UtilityControls() {
   const { toggleFullscreen, isFullscreen } = usePlayerControls();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = usePlayerStore((state) => state.settingsOpen);
+  const setSettingsOpen = usePlayerStore((state) => state.setSettingsOpen);
 
   return (
     <div className="utility-controls">
@@ -30,10 +30,6 @@ export function UtilityControls() {
       >
         {isFullscreen ? <Minimize2 size={19} /> : <Maximize2 size={19} />}
       </IconButton>
-      <SettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
     </div>
   );
 }

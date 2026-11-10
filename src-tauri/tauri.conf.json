@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VANTA",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "identifier": "com.vanta.player",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -16,9 +16,13 @@
         "title": "VANTA",
         "width": 1360,
         "height": 880,
-        "minWidth": 1000,
-        "minHeight": 680,
+        "minWidth": 900,
+        "minHeight": 560,
         "center": true,
+        "preventOverflow": {
+          "width": 32,
+          "height": 32
+        },
         "resizable": true,
         "fullscreen": false,
         "decorations": false,
@@ -26,6 +30,7 @@
         "shadow": true,
         "backgroundColor": "#07070b",
         "dragDropEnabled": true,
+        "additionalBrowserArgs": "--autoplay-policy=no-user-gesture-required --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection",
         "theme": "Dark",
         "visible": true
       }
@@ -50,9 +55,32 @@
       "icons/icon.ico"
     ],
     "shortDescription": "A premium, next-gen local media player.",
-    "longDescription": "VANTA is a premium local media player for Windows with a cinematic glass interface, instant seeking, rich playlist controls, and silky-smooth MP4 and MP3 playback.",
+    "longDescription": "VANTA is a premium local media player for Windows with a cinematic glass interface, instant seeking, rich playlist controls, immersive spatial audio, and silky-smooth MP4 and MP3 playback.",
     "category": "Video",
     "copyright": "Copyright © 2026 VANTA",
+    "fileAssociations": [
+      {
+        "ext": ["mp3", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus"],
+        "name": "VANTA Audio",
+        "description": "Audio file",
+        "role": "Viewer",
+        "mimeType": "audio/*"
+      },
+      {
+        "ext": ["mp4", "m4v", "webm", "mov", "mkv", "avi"],
+        "name": "VANTA Video",
+        "description": "Video file",
+        "role": "Viewer",
+        "mimeType": "video/*"
+      },
+      {
+        "ext": ["png", "jpg", "jpeg", "webp", "gif", "svg"],
+        "name": "VANTA Image",
+        "description": "Image file",
+        "role": "Viewer",
+        "mimeType": "image/*"
+      }
+    ],
     "windows": {
       "nsis": {
         "installMode": "currentUser",

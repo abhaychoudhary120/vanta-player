@@ -167,6 +167,12 @@ export async function openMediaDialog(): Promise<string[]> {
   return Array.isArray(selection) ? selection : [selection];
 }
 
+export const OPEN_FILES_EVENT = "vanta-open-files";
+
+export async function takeLaunchPaths(): Promise<string[]> {
+  return invoke<string[]>("take_launch_paths");
+}
+
 export async function probeMedia(path: string): Promise<MediaMetadata> {
   return invoke<MediaMetadata>("probe_media", { path });
 }

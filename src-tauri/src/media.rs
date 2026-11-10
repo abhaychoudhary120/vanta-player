@@ -8,9 +8,7 @@ use std::path::{Path, PathBuf};
 
 const MAX_ARTWORK_BYTES: usize = 5 * 1024 * 1024;
 const MAX_SUBTITLE_BYTES: u64 = 4 * 1024 * 1024;
-const AUDIO_EXTENSIONS: &[&str] = &[
-    "mp3", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus",
-];
+const AUDIO_EXTENSIONS: &[&str] = &["mp3", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus"];
 
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,10 +56,10 @@ fn probe_sync(path: &str) -> Result<MediaInfo, String> {
         .map_err(|error| format!("Unable to read media metadata: {error}"))?;
     let properties = tagged_file.properties();
     let duration = properties.duration().as_secs_f64();
-    let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
-    let has_artwork = tag
-        .map(|tag| !tag.pictures().is_empty())
-        .unwrap_or(false);
+    let tag = tagged_file
+        .primary_tag()
+        .or_else(|| tagged_file.first_tag());
+    let has_artwork = tag.map(|tag| !tag.pictures().is_empty()).unwrap_or(false);
 
     Ok(MediaInfo {
         file_name: file_name(file_path),
@@ -81,7 +79,10 @@ fn artwork_sync(path: &str) -> Result<Option<String>, String> {
 
     let tagged_file = lofty::read_from_path(file_path)
         .map_err(|error| format!("Unable to read embedded artwork: {error}"))?;
-    let Some(tag) = tagged_file.primary_tag().or_else(|| tagged_file.first_tag()) else {
+    let Some(tag) = tagged_file
+        .primary_tag()
+        .or_else(|| tagged_file.first_tag())
+    else {
         return Ok(None);
     };
 
@@ -189,7 +190,8 @@ fn subtitle_sync(video_path: &str) -> Result<Option<String>, String> {
         return Ok(None);
     }
 
-    let bytes = std::fs::read(&path).map_err(|error| format!("Unable to read subtitles: {error}"))?;
+    let bytes =
+        std::fs::read(&path).map_err(|error| format!("Unable to read subtitles: {error}"))?;
     let text = String::from_utf8_lossy(&bytes);
     let text = text.trim_start_matches('\u{feff}').replace("\r\n", "\n");
     let text = text.replace('\r', "\n");

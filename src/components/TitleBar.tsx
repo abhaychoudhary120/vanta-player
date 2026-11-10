@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Copy, ListVideo, Minus, Plus, Square, X } from "lucide-react";
+import {
+  Copy,
+  ListVideo,
+  Minus,
+  Plus,
+  Settings2,
+  Square,
+  X,
+} from "lucide-react";
 import { usePlayerControls } from "../contexts/PlayerControlsContext";
 import { usePlayerStore } from "../store/usePlayerStore";
 import { BrandMark } from "./BrandMark";
@@ -10,6 +18,8 @@ export function TitleBar() {
   const { openFiles } = usePlayerControls();
   const sidebarOpen = usePlayerStore((state) => state.sidebarOpen);
   const toggleSidebar = usePlayerStore((state) => state.toggleSidebar);
+  const settingsOpen = usePlayerStore((state) => state.settingsOpen);
+  const setSettingsOpen = usePlayerStore((state) => state.setSettingsOpen);
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -84,6 +94,15 @@ export function TitleBar() {
           <span>Open media</span>
           <kbd>Ctrl O</kbd>
         </button>
+
+        <IconButton
+          label="Settings"
+          active={settingsOpen}
+          onClick={() => setSettingsOpen(true)}
+          className="titlebar-settings-button"
+        >
+          <Settings2 size={17} />
+        </IconButton>
 
         <IconButton
           label={sidebarOpen ? "Hide queue" : "Show queue"}

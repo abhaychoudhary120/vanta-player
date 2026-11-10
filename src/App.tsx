@@ -6,6 +6,8 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AmbientBackground } from "./components/AmbientBackground";
@@ -13,6 +15,7 @@ import { DropOverlay } from "./components/DropOverlay";
 import { PlayerConsole } from "./components/PlayerConsole";
 import { PlayerStage } from "./components/PlayerStage";
 import { PlaylistPanel } from "./components/PlaylistPanel";
+import { SettingsModal } from "./components/SettingsModal";
 import { TitleBar } from "./components/TitleBar";
 import { ToastStack } from "./components/ToastStack";
 import {
@@ -24,7 +27,12 @@ import { useEqualizer } from "./hooks/useEqualizer";
 import { useMediaSession } from "./hooks/useMediaSession";
 import { useSystemMediaControls } from "./hooks/useSystemMediaControls";
 import { clamp } from "./lib/format";
-import { openMediaDialog, toAssetUrl } from "./lib/media";
+import {
+  OPEN_FILES_EVENT,
+  openMediaDialog,
+  takeLaunchPaths,
+  toAssetUrl,
+} from "./lib/media";
 import { getPalette } from "./lib/palette";
 import { usePlayerStore } from "./store/usePlayerStore";
 
@@ -65,6 +73,8 @@ export default function App() {
   const hardwareAcceleration = usePlayerStore(
     (state) => state.hardwareAcceleration,
   );
+  const settingsOpen = usePlayerStore((state) => state.settingsOpen);
+  const setSettingsOpen = usePlayerStore((state) => state.setSettingsOpen);
   const addPaths = usePlayerStore((state) => state.addPaths);
   const notify = usePlayerStore((state) => state.notify);
   const setVolume = usePlayerStore((state) => state.setVolume);
@@ -241,12 +251,13 @@ export default function App() {
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
-    const appWindow = getCurrentWindow();
-
     try {
-      const next = !(await appWindow.isFullscreen());
-      await appWindow.setFullscreen(next);
+      const next = await invoke<boolean>("toggle_fullscreen");
       setIsFullscreen(next);
+
+      if (!next) {
+        setChromeVisible(true);
+      }
     } catch {
       notify("Fullscreen is unavailable right now.", "error");
     }
@@ -319,6 +330,91 @@ export default function App() {
   }, [isFullscreen, isPlaying]);
 
   useEffect(() => {
+    const appWindow = getCurrentWindow();
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    let syncTimer: number | undefined;
+
+    const syncFullscreen = async () => {
+      try {
+        const value = await appWindow.isFullscreen();
+        if (!disposed) {
+          setIsFullscreen(value);
+        }
+      } catch {
+        // Keep the last known state when the native window is unavailable.
+      }
+    };
+
+    void syncFullscreen();
+
+    void appWindow
+      .onResized(() => {
+        if (syncTimer) {
+          window.clearTimeout(syncTimer);
+        }
+
+        // Let Windows finish the fullscreen transition before reading it back.
+        syncTimer = window.setTimeout(() => {
+          void syncFullscreen();
+        }, 120);
+      })
+      .then((cleanup) => {
+        if (disposed) {
+          cleanup();
+        } else {
+          unlisten = cleanup;
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      disposed = true;
+      if (syncTimer) {
+        window.clearTimeout(syncTimer);
+      }
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+
+    const ingestLaunchPaths = async () => {
+      try {
+        const paths = await takeLaunchPaths();
+        if (!disposed && paths.length > 0) {
+          usePlayerStore.getState().openPaths(paths);
+        }
+      } catch {
+        // The browser preview has no native launcher to read paths from.
+      }
+    };
+
+    void listen(OPEN_FILES_EVENT, () => {
+      void ingestLaunchPaths();
+    })
+      .then((cleanup) => {
+        if (disposed) {
+          cleanup();
+          return;
+        }
+
+        unlisten = cleanup;
+        void ingestLaunchPaths();
+      })
+      .catch(() => {
+        void ingestLaunchPaths();
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
+  useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
 
@@ -384,6 +480,12 @@ export default function App() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "o") {
         event.preventDefault();
         void openFiles();
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key === ",") {
+        event.preventDefault();
+        setSettingsOpen(true);
         return;
       }
 
@@ -474,6 +576,7 @@ export default function App() {
     cycleRepeat,
     toggleShuffle,
     isFullscreen,
+    setSettingsOpen,
   ]);
 
   return (
@@ -504,6 +607,10 @@ export default function App() {
         </main>
 
         <ToastStack />
+        <SettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
         {dragActive ? <DropOverlay /> : null}
       </div>
     </PlayerControlsProvider>

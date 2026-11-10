@@ -1,11 +1,13 @@
 import { useEffect, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import {
+  AudioLines,
   Download,
   Loader2,
   RefreshCw,
   RotateCcw,
   Settings2,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useUpdater } from "../hooks/useUpdater";
@@ -19,6 +21,12 @@ import {
   type NamedEqualizerPreset,
 } from "../lib/equalizer";
 import { formatRate } from "../lib/format";
+import {
+  SPATIAL_MODE_HINTS,
+  SPATIAL_MODE_LABELS,
+  SPATIAL_MODE_ORDER,
+  type SpatialMode,
+} from "../lib/spatial";
 import {
   MAX_PLAYBACK_RATE,
   MIN_PLAYBACK_RATE,
@@ -83,6 +91,16 @@ export function SettingsModal({
   const setEqGain = usePlayerStore((state) => state.setEqGain);
   const setEqPreset = usePlayerStore((state) => state.setEqPreset);
   const resetEqualizer = usePlayerStore((state) => state.resetEqualizer);
+  const spatialEnabled = usePlayerStore((state) => state.spatialEnabled);
+  const setSpatialEnabled = usePlayerStore(
+    (state) => state.setSpatialEnabled,
+  );
+  const spatialIntensity = usePlayerStore((state) => state.spatialIntensity);
+  const setSpatialIntensity = usePlayerStore(
+    (state) => state.setSpatialIntensity,
+  );
+  const spatialMode = usePlayerStore((state) => state.spatialMode);
+  const setSpatialMode = usePlayerStore((state) => state.setSpatialMode);
   const {
     status: updateStatus,
     currentVersion,
@@ -129,6 +147,13 @@ export function SettingsModal({
       setEqEnabled(true);
     }
     setEqPreset(preset);
+  };
+
+  const applySpatialMode = (mode: SpatialMode) => {
+    if (!spatialEnabled) {
+      setSpatialEnabled(true);
+    }
+    setSpatialMode(mode);
   };
 
   const updateBusy =
@@ -295,15 +320,15 @@ export function SettingsModal({
           <section className="settings-section">
             <div className="settings-section-head">
               <h3>Performance</h3>
-              <span>Built for integrated graphics</span>
+              <span>Rendering &amp; motion</span>
             </div>
 
             <div className="settings-row settings-row--top">
               <div>
                 <strong>Hardware acceleration</strong>
                 <span>
-                  Turn off to use a lighter rendering path on Intel HD and
-                  other low-end GPUs.
+                  Use GPU rendering for the interface. Turn it off if animations
+                  stutter on older hardware.
                 </span>
               </div>
               <ToggleSwitch
@@ -340,27 +365,114 @@ export function SettingsModal({
             </div>
           </section>
 
-          <section className="settings-section settings-section--wide">
-            <div className="settings-section-head settings-section-head--row">
-              <div>
-                <h3>Equalizer</h3>
-                <span>10 bands · ±12 dB</span>
-              </div>
-              <div className="settings-head-actions">
-                <button
-                  type="button"
-                  className="settings-reset"
-                  onClick={resetEqualizer}
-                >
-                  <RotateCcw size={12} />
-                  Reset
-                </button>
+          <section className="settings-section settings-section--wide settings-section--atmos">
+            <div className="settings-section-head">
+              <div className="settings-section-title">
+                <h3>
+                  Dolby Atmos
+                  <span className="settings-badge">SPATIAL</span>
+                </h3>
                 <ToggleSwitch
-                  checked={eqEnabled}
-                  onChange={setEqEnabled}
-                  label="Enable equalizer"
+                  checked={spatialEnabled}
+                  onChange={setSpatialEnabled}
+                  label="Enable Dolby Atmos"
                 />
               </div>
+              <span>Immersive spatial sound for any headphones or speakers</span>
+            </div>
+
+            <div className="atmos-intro">
+              <span className="atmos-icon">
+                <AudioLines size={17} />
+              </span>
+              <p>
+                Expands stereo into a wider, deeper soundstage with controlled
+                bass, crisp air and real room reflections. It is processed live
+                on your device.
+              </p>
+            </div>
+
+            <div
+              className={`settings-field atmos-field ${
+                spatialEnabled ? "" : "is-muted"
+              }`}
+            >
+              <div className="settings-field-label">
+                <span>Immersion</span>
+                <strong>{spatialIntensity}%</strong>
+              </div>
+              <input
+                type="range"
+                className="mini-range settings-range"
+                min={0}
+                max={100}
+                step={1}
+                value={spatialIntensity}
+                aria-label="Dolby Atmos immersion"
+                style={
+                  {
+                    "--range-value": `${spatialIntensity}%`,
+                  } as CSSProperties
+                }
+                onChange={(event) => {
+                  if (!spatialEnabled) {
+                    setSpatialEnabled(true);
+                  }
+                  setSpatialIntensity(Number(event.currentTarget.value));
+                }}
+              />
+              <div className="settings-scale">
+                <span>Subtle</span>
+                <span>Cinematic</span>
+              </div>
+            </div>
+
+            <div
+              className="segmented-control"
+              role="radiogroup"
+              aria-label="Dolby Atmos profile"
+            >
+              {SPATIAL_MODE_ORDER.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={spatialMode === mode}
+                  className={spatialMode === mode ? "is-active" : ""}
+                  onClick={() => applySpatialMode(mode)}
+                >
+                  {SPATIAL_MODE_LABELS[mode]}
+                </button>
+              ))}
+            </div>
+
+            <p className="settings-note atmos-hint">
+              <Sparkles size={12} />
+              {SPATIAL_MODE_HINTS[spatialMode]}
+            </p>
+          </section>
+
+          <section className="settings-section settings-section--wide">
+            <div className="settings-section-head">
+              <div className="settings-section-title">
+                <h3>Equalizer</h3>
+                <div className="settings-head-actions">
+                  <button
+                    type="button"
+                    className="settings-reset"
+                    onClick={resetEqualizer}
+                  >
+                    <RotateCcw size={12} />
+                    Reset
+                  </button>
+                  <ToggleSwitch
+                    checked={eqEnabled}
+                    onChange={setEqEnabled}
+                    label="Enable equalizer"
+                  />
+                </div>
+              </div>
+              <span>10 bands · ±12 dB</span>
             </div>
 
             <div className="eq-presets" role="group" aria-label="Presets">
@@ -424,14 +536,14 @@ export function SettingsModal({
           </section>
 
           <section className="settings-section settings-section--wide">
-            <div className="settings-section-head settings-section-head--row">
-              <div>
+            <div className="settings-section-head">
+              <div className="settings-section-title">
                 <h3>Updates</h3>
-                <span>Signed builds from GitHub Releases</span>
+                <span className="settings-version">
+                  {currentVersion ? `v${currentVersion}` : "VANTA"}
+                </span>
               </div>
-              <span className="settings-version">
-                {currentVersion ? `v${currentVersion}` : "VANTA"}
-              </span>
+              <span>Signed builds from GitHub Releases</span>
             </div>
 
             <div className="update-card">

@@ -18,6 +18,12 @@ import {
   probeMedia,
   isSupportedPath,
 } from "../lib/media";
+import {
+  SPATIAL_DEFAULT_INTENSITY,
+  clampSpatialIntensity,
+  normalizeSpatialMode,
+  type SpatialMode,
+} from "../lib/spatial";
 import type {
   AddPathsResult,
   RepeatMode,
@@ -33,6 +39,7 @@ export const MAX_PLAYBACK_RATE = 3;
 
 interface AddTracksOptions {
   play?: boolean;
+  silent?: boolean;
 }
 
 interface PlayerState {
@@ -58,8 +65,13 @@ interface PlayerState {
   eqEnabled: boolean;
   eqGains: number[];
   eqPreset: EqualizerPreset;
+  spatialEnabled: boolean;
+  spatialIntensity: number;
+  spatialMode: SpatialMode;
+  settingsOpen: boolean;
 
   addPaths: (paths: string[], options?: AddTracksOptions) => AddPathsResult;
+  openPaths: (paths: string[]) => void;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
   clearQueue: () => void;
@@ -84,6 +96,10 @@ interface PlayerState {
   setEqGain: (index: number, gain: number) => void;
   setEqPreset: (preset: NamedEqualizerPreset) => void;
   resetEqualizer: () => void;
+  setSpatialEnabled: (enabled: boolean) => void;
+  setSpatialIntensity: (intensity: number) => void;
+  setSpatialMode: (mode: SpatialMode) => void;
+  setSettingsOpen: (open: boolean) => void;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
   toggleSidebar: () => void;
@@ -173,10 +189,15 @@ export const usePlayerStore = create<PlayerState>()(
       eqEnabled: false,
       eqGains: defaultEqGains(),
       eqPreset: "flat",
+      spatialEnabled: false,
+      spatialIntensity: SPATIAL_DEFAULT_INTENSITY,
+      spatialMode: "music",
+      settingsOpen: false,
 
       addPaths: (paths, options = {}) => {
         const state = get();
         const shouldPlay = options.play ?? true;
+        const silent = options.silent ?? false;
         const knownPaths = new Set(state.tracks.map((track) => pathKey(track.path)));
         const additions: Track[] = [];
         let duplicates = 0;
@@ -228,24 +249,67 @@ export const usePlayerStore = create<PlayerState>()(
           void enrichTracks(additions, get().updateTrack);
         }
 
-        if (additions.length > 0 && (duplicates > 0 || unsupported > 0)) {
-          get().notify(
-            `${additions.length} added · ${duplicates + unsupported} skipped`,
-          );
-        } else if (additions.length > 0) {
-          get().notify(
-            additions.length === 1
-              ? "Added to your queue"
-              : `${additions.length} titles added to your queue`,
-            "success",
-          );
-        } else if (unsupported > 0 && duplicates === 0) {
-          get().notify("No supported media files were found", "error");
-        } else if (duplicates > 0) {
-          get().notify("Those titles are already in your queue");
+        if (!silent) {
+          if (additions.length > 0 && (duplicates > 0 || unsupported > 0)) {
+            get().notify(
+              `${additions.length} added · ${duplicates + unsupported} skipped`,
+            );
+          } else if (additions.length > 0) {
+            get().notify(
+              additions.length === 1
+                ? "Added to your queue"
+                : `${additions.length} titles added to your queue`,
+              "success",
+            );
+          } else if (unsupported > 0 && duplicates === 0) {
+            get().notify("No supported media files were found", "error");
+          } else if (duplicates > 0) {
+            get().notify("Those titles are already in your queue");
+          }
         }
 
         return result;
+      },
+
+      openPaths: (paths) => {
+        const state = get();
+        const supported = paths
+          .map((path) => path.trim())
+          .filter((path) => path.length > 0 && isSupportedPath(path));
+
+        if (supported.length === 0) {
+          if (paths.length > 0) {
+            state.notify("That file type is not supported", "error");
+          }
+          return;
+        }
+
+        const firstKey = pathKey(supported[0]);
+        const existing = state.tracks.find(
+          (track) => pathKey(track.path) === firstKey,
+        );
+
+        if (!existing) {
+          const result = state.addPaths(supported, {
+            play: false,
+            silent: true,
+          });
+
+          if (result.added === 0) {
+            state.notify("That file could not be opened", "error");
+            return;
+          }
+        }
+
+        const nextState = get();
+        const target =
+          nextState.tracks.find(
+            (track) => pathKey(track.path) === firstKey,
+          ) ?? nextState.tracks[nextState.tracks.length - 1];
+
+        if (target) {
+          nextState.selectTrack(target.id, true);
+        }
       },
 
       updateTrack: (id, patch) => {
@@ -529,6 +593,15 @@ export const usePlayerStore = create<PlayerState>()(
         set({ eqGains: defaultEqGains(), eqPreset: "flat" });
       },
 
+      setSpatialEnabled: (enabled) => set({ spatialEnabled: enabled }),
+
+      setSpatialIntensity: (intensity) =>
+        set({ spatialIntensity: clampSpatialIntensity(intensity) }),
+
+      setSpatialMode: (mode) => set({ spatialMode: normalizeSpatialMode(mode) }),
+
+      setSettingsOpen: (open) => set({ settingsOpen: open }),
+
       toggleShuffle: () => {
         set((state) => ({ shuffle: !state.shuffle }));
       },
@@ -588,6 +661,9 @@ export const usePlayerStore = create<PlayerState>()(
         eqEnabled: state.eqEnabled,
         eqGains: state.eqGains,
         eqPreset: state.eqPreset,
+        spatialEnabled: state.spatialEnabled,
+        spatialIntensity: state.spatialIntensity,
+        spatialMode: state.spatialMode,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<PlayerState>;
@@ -624,6 +700,11 @@ export const usePlayerStore = create<PlayerState>()(
           persisted.visualizer === "circular"
             ? persisted.visualizer
             : "bars";
+        const spatialEnabled = Boolean(persisted.spatialEnabled);
+        const spatialIntensity = clampSpatialIntensity(
+          persisted.spatialIntensity,
+        );
+        const spatialMode = normalizeSpatialMode(persisted.spatialMode);
 
         return {
           ...currentState,
@@ -647,6 +728,10 @@ export const usePlayerStore = create<PlayerState>()(
           eqEnabled: Boolean(persisted.eqEnabled),
           eqGains,
           eqPreset: presetForGains(eqGains),
+          spatialEnabled,
+          spatialIntensity,
+          spatialMode,
+          settingsOpen: false,
           isPlaying: false,
           isBuffering: false,
           currentTime: 0,

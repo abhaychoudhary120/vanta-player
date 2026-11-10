@@ -6,12 +6,14 @@ integration with a cinematic glass interface and a focused, local-first playback
 ## Highlights
 
 - Local video, audio, and image playback through the Windows WebView2 engine
+- Opens in a centered window fitted to the display work area and starts playing a double-clicked file immediately
 - Drag files in from Explorer or use the native file picker
+- Settings always reachable from the titlebar gear, even with an empty queue
 - Queue with pointer drag reordering and keyboard controls
 - Embedded artwork, title, artist, and album metadata for audio
 - Frameless native window controls, keyboard shortcuts, and true fullscreen
 - Playback speed with pitch preservation, volume, mute, seeking, and automatic queue advance
-- 10-band equalizer, audio visualizers, and a hardware-acceleration text mode
+- 10-band equalizer, Dolby Atmos-style spatial audio, and audio visualizers
 - Subtitle sidecars (`.vtt`/`.srt`), image viewer, and minutes-long image slideshows
 - Media Session integration for supported operating-system controls
 - Session persistence for the queue, volume, playback speed, repeat mode, and preferences
@@ -71,8 +73,8 @@ src-tauri\target\release\bundle\nsis\
 The build also produces the updater signature next to the installer:
 
 ```text
-VANTA_1.0.0_x64-setup.exe
-VANTA_1.0.0_x64-setup.exe.sig
+VANTA_1.1.0_x64-setup.exe
+VANTA_1.1.0_x64-setup.exe.sig
 ```
 
 `scripts/build.ps1` signs the updater bundle with `%USERPROFILE%\.tauri\vanta.key` by default. Set
@@ -108,8 +110,8 @@ The release workflow in `.github/workflows/release.yml` builds Windows artifacts
 3. Commit, tag, and push:
 
    ```powershell
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag v1.1.0
+   git push origin v1.1.0
    ```
 
 The GitHub release must not be a draft or prerelease, otherwise `releases/latest/download/latest.json`
@@ -134,6 +136,7 @@ stay paired with it.
 | Key | Action |
 | --- | --- |
 | `Space` | Play or pause |
+| `Ctrl` + `,` | Open settings |
 | `Left` / `Right` | Seek backward or forward 5 seconds |
 | `Up` / `Down` | Raise or lower volume by 5% |
 | `F` | Enter or leave fullscreen |
@@ -147,19 +150,29 @@ input behavior keeps working.
 ## How it works
 
 VANTA is a Tauri 2 application. The React interface runs in WebView2, while a small Rust backend
-provides three commands:
+provides these commands:
 
 - `probe_media` reads container, duration, tags, and embedded cover art with `lofty`
 - `read_artwork` returns embedded artwork as a bounded data URL
 - `read_subtitle` loads a same-name `.vtt` or `.srt` sidecar up to 4 MiB
+- `toggle_fullscreen` enters fullscreen and reliably restores the previous windowed geometry
 
 Playback itself uses a persistent HTML video element. Local files are exposed to the webview through
 Tauri's asset protocol. Queue, volume, speed, repeat mode, EQ settings, and other preferences persist
 under the `vanta-player-v1` local storage key; transient playback state is reset on startup.
 
-The equalizer uses a lazily created Web Audio graph (10 peaking filters plus preamp) and stays off by
-default so normal playback does not route through Web Audio. Hardware acceleration is a text-rendering
-mode controlled by `data-hwaccel` on the app shell, not a change to video decoding.
+The equalizer and spatial enhancer share a lazily created Web Audio graph (10 peaking filters,
+mid/side widening, tone shelves, room reflections and a limiter) and stay off by default so normal
+playback does not route through Web Audio. Hardware acceleration is a text-rendering mode controlled
+by `data-hwaccel` on the app shell, not a change to video decoding.
+
+The installed app registers as a Windows handler for its supported media types. Launch arguments are
+queued in Rust and drained by the frontend, and the single-instance plugin forwards files opened while
+VANTA is already running, so double-clicking a track starts playback in the existing window.
+
+The Windows executable embeds a Per-Monitor V2 DPI-aware application manifest, so the frameless window
+and WebView2 content stay sharp at 125%, 150%, and across mixed-DPI monitors. The main window also
+clamps its initial size to the monitor work area so it never covers the taskbar.
 
 The queue uses a custom pointer-based reorder interaction. Tauri's native drag/drop handler is
 enabled so Explorer file drops work on Windows, which also disables HTML5 drag-and-drop inside
@@ -216,8 +229,17 @@ artwork from the internet.
 
 ### Fullscreen does not toggle
 
-Use `F` or the titlebar button. `Escape` leaves fullscreen. If the window is managed by an external
-window tool, that tool may intercept the shortcut.
+VANTA starts windowed. Use `F` or the player fullscreen button to enter fullscreen, and `Escape`,
+`F`, or the same button to leave it. Leaving fullscreen restores the previous window position, size,
+and maximized state. If the window is managed by an external window tool, that tool may intercept the
+shortcut.
+
+### Text looks blurry
+
+VANTA embeds a Per-Monitor V2 DPI-aware Windows manifest and renders through WebView2 with font
+smoothing enabled. If text still looks soft after changing Windows display scaling, restart VANTA so
+WebView2 picks up the new scale factor. Prefer the standard Windows presets (100%, 125%, 150%) and
+avoid custom fractional scaling, which Windows resamples.
 
 ### Installer SmartScreen warning
 
